@@ -10,8 +10,8 @@ export default async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY;
 
     try {
-        // Updated model name to gemini-1.5-flash-latest for better stability
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
+        // CHANGED MODEL NAME: Removed "-latest" to use the standard stable version
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -21,12 +21,11 @@ export default async function handler(req, res) {
 
         const data = await response.json();
         
-        // Debugging: If the AI sends an error, we want to see it!
         if (data.error) {
             return res.status(200).json({ text: `AI Error: ${data.error.message}` });
         }
 
-        const cleanText = data.candidates?.[0]?.content?.parts?.[0]?.text || "The AI is thinking... please try again in a moment.";
+        const cleanText = data.candidates?.[0]?.content?.parts?.[0]?.text || "The AI is thinking... please try again.";
         res.status(200).json({ text: cleanText });
     } catch (error) {
         res.status(500).json({ error: error.message });
