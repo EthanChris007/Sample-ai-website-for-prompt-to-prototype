@@ -1,34 +1,106 @@
 export default async function handler(req, res) {
-    res.setHeader('Access-Control-Allow-Credentials', true);
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+  // Only allow POST requests
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
-    if (req.method === 'OPTIONS') return res.status(200).end();
+  try {
+    const { message, conversationHistory } = req.body;
 
-    const body = req.body && typeof req.body === 'object' ? req.body : JSON.parse(req.body || '{}');
-    const apiKey = process.env.GEMINI_API_KEY;
-
-    try {
-        // SWITCHED TO 1.5 FLASH: Higher free-tier availability in late 2025
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: `Act as a Career Architect. Give a 3-sentence career prediction and a 6-month roadmap for: ${body.userInput}` }] }]
-            })
-        });
-
-        const data = await response.json();
-        
-        if (data.error) {
-            // If this says "Quota Exceeded" again, you'll need to link a card in Google AI Studio
-            return res.status(200).json({ text: `Google API Error: ${data.error.message}` });
-        }
-
-        const cleanText = data.candidates?.[0]?.content?.parts?.[0]?.text || "The AI response was blank. Try again!";
-        res.status(200).json({ text: cleanText });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
+    if (!message) {
+      return res.status(400).json({ error: 'Message is required' });
     }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    
+    if (!apiKey) {
+      return res.status(500).json({ error: 'API key not configured' });
+    }
+
+    // Build contents array with conversation history
+    const contents = [];
+    
+    // Add conversation history if exists
+    if (conversationHistory && conversationHistory.length > 0) {
+      conversationHistory.forEach(msg => {
+        contents.push({
+          role: msg.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: msg.content }]
+        });
+      });
+    }
+    
+    // Add current user message
+    contents.push({
+      role: 'user',
+      parts: [{ text: message }]
+    });
+
+    // Call Gemini 1.5 Flash API (generous free tier!)
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: contents,
+          systemInstruction: {
+            parts: [{
+              text: "You are a helpful career advisor. Provide practical, actionable career advice. Be encouraging but realistic. Help users with resume tips, interview preparation, career transitions, and professional development."
+            }]
+          },
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 1024,
+          }
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    // Check for API errors
+    if (!response.ok) {
+      console.error('Gemini API Error:', data);
+      
+      if (response.status === 429) {
+        return res.status(429).json({ 
+          error: 'Rate limit exceeded. Please wait a moment and try again.',
+          details: data.error?.message 
+        });
+      }
+      
+      return res.status(response.status).json({ 
+        error: data.error?.message || 'API request failed',
+        details: data
+      });
+    }
+
+    // Extract the response text
+    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!aiResponse) {
+      return res.status(500).json({ 
+        error: 'No response from AI',
+        details: data 
+      });
+    }
+
+    return res.status(200).json({ 
+      response: aiResponse,
+      model: "gemini-1.5-flash"
+    });
+
+  } catch (error) {
+    console.error('Server Error:', error);
+    
+    return res.status(500).json({ 
+      error: 'Failed to get AI response',
+      details: error.message 
+    });
+  }
 }
