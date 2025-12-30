@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Career Pathfinder</title>
+    <style>
+        /* Professional Career Counselor Theme */
+        :root {
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --accent: #2563eb;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { color: var(--accent); font-size: 2.5rem; }
+        .container {
+            max-width: 1100px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 25px;
+        }
+        .panel {
+            background: var(--card);
+            padding: 30px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            background: #fff;
+            color: #1e293b;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            font-size: 1rem;
+            resize: none;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+            outline: none;
+        }
+        textarea:focus { border-color: var(--accent); }
+        button {
+            width: 100%;
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: background 0.2s;
+        }
+        button:hover { background: #1d4ed8; }
+        #preview {
+            background: #fff;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .status-msg { font-size: 0.9rem; color: #64748b; margin-top: 15px; font-weight: 500; }
+        h3 { color: var(--accent); margin-top: 0; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>🚀 AI Career Pathfinder</h1>
+        <p>Expert career counseling driven by the Golden Prompt logic.</p>
+    </div>
+
+    <div class="container">
+        <div class="panel">
+            <h3>Profile Analysis</h3>
+            <p style="font-size: 0.9rem; color: #64748b;">Describe your skills, hobbies, and what you enjoy doing.</p>
+            <textarea id="userInput" placeholder="e.g., 'I love math and solving puzzles' or 'I am very creative and like to draw'"></textarea>
+            <button onclick="predictCareer()">Predict My Future</button>
+            <div id="status" class="status-msg">Ready to analyze your profile...</div>
+        </div>
+
+        <div class="panel">
+            <h3>Your Career Blueprint</h3>
+            <div id="preview">
+                <p id="placeholderText" style="color: #94a3b8; text-align: center; padding: 20px;">
+                    Enter your details and click "Predict My Future" to generate your roadmap.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function predictCareer() {
+            const input = document.getElementById('userInput').value.trim();
+            const status = document.getElementById('status');
+            const preview = document.getElementById('preview');
+
+            if (!input) return alert("Please enter your skills and interests!");
+
+            status.innerText = "Analyzing career trends and skill-matching...";
+            preview.innerHTML = "<p style='color: #64748b; font-style: italic;'>Consulting the Career Architect AI...</p>";
+
+            setTimeout(() => {
+                status.innerText = "Analysis Complete!";
+                
+                // Logic to simulate AI "Thinking" based on keywords
+                let advice = "";
+                const lowerInput = input.toLowerCase();
+
+                if (lowerInput.includes("code") || lowerInput.includes("math") || lowerInput.includes("puzzle")) {
+                    advice = "<h3>🚀 Top Match: Software Engineer</h3><p>Based on your logic skills, you should focus on Full-Stack Development. This field is growing at 22% annually.</p><p><b>Roadmap:</b><br>1. Learn Javascript basics.<br>2. Master React for front-end.<br>3. Build a personal project portfolio.</p>";
+                } else if (lowerInput.includes("art") || lowerInput.includes("draw") || lowerInput.includes("design")) {
+                    advice = "<h3>🎨 Top Match: UI/UX Designer</h3><p>Your creative eye is perfect for digital products. Companies value designers who understand user behavior.</p><p><b>Roadmap:</b><br>1. Master Figma and Adobe XD.<br>2. Build a portfolio on Behance.<br>3. Study User Research fundamentals.</p>";
+                } else {
+                    advice = "<h3>📈 Top Match: Business Analyst</h3><p>Your general skills align with strategic operations and data interpretation.</p><p><b>Roadmap:</b><br>1. Advanced Excel and SQL.<br>2. Study Data Visualization (Tableau).<br>3. Obtain a Scrum Master certification.</p>";
+                }
+
+                preview.innerHTML = `<div style="text-align: left; padding: 30px; line-height: 1.6; width: 100%; box-sizing: border-box;">${advice}</div>`;
+            }, 1500);
+        }
+    </script>
+</body>
+</html>
