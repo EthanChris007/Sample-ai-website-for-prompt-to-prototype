@@ -7,16 +7,11 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end();
 
     const body = req.body && typeof req.body === 'object' ? req.body : JSON.parse(req.body || '{}');
-    
-    // THE DIAGNOSTIC CHECK
     const apiKey = process.env.GEMINI_API_KEY;
 
-    if (!apiKey || apiKey === "") {
-        return res.status(200).json({ text: "DIAGNOSTIC ERROR: Your GEMINI_API_KEY is missing or not named correctly in Vercel settings." });
-    }
-
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        // UPDATED: Using gemini-2.0-flash (The stable 2025 version)
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -30,7 +25,7 @@ export default async function handler(req, res) {
             return res.status(200).json({ text: `Google API Error: ${data.error.message}` });
         }
 
-        const cleanText = data.candidates?.[0]?.content?.parts?.[0]?.text || "The AI is thinking... please try again.";
+        const cleanText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Response received, but it was empty.";
         res.status(200).json({ text: cleanText });
     } catch (error) {
         res.status(500).json({ error: error.message });
