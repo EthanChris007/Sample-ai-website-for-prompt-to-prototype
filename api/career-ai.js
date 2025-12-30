@@ -4,13 +4,9 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
     res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 
-    if (req.method === 'OPTIONS') {
-        res.status(200).end();
-        return;
-    }
+    if (req.method === 'OPTIONS') return res.status(200).end();
 
     const body = req.body && typeof req.body === 'object' ? req.body : JSON.parse(req.body || '{}');
-    const userInput = body.userInput || "No input provided"; 
     const apiKey = process.env.GEMINI_API_KEY;
 
     try {
@@ -18,12 +14,16 @@ export default async function handler(req, res) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                contents: [{ parts: [{ text: `Act as a Career Architect. Analyze this profile and give a 3-sentence career prediction and a 6-month roadmap: ${userInput}` }] }]
+                contents: [{ parts: [{ text: `Act as a Career Architect. Give a 3-sentence career prediction and a 6-month roadmap for: ${body.userInput}` }] }]
             })
         });
 
         const data = await response.json();
-        res.status(200).json(data);
+        
+        // This cleans the data so the website gets only the text it needs
+        const cleanText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response from AI.";
+        
+        res.status(200).json({ text: cleanText });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
