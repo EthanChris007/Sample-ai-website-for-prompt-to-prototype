@@ -122,16 +122,15 @@
             try {
                 // This talks to your Vercel backend
 const response = await fetch('https://sample-ai-website-for-prompt-to-pro.vercel.app/api/career-ai', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userInput: input })
-                });
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userInput: input })
+});
 
-                const data = await response.json();
-                
-                // Extracting the real AI response
-                const aiResponse = data.candidates[0].content.parts[0].text;
-                
+const data = await response.json();
+
+// Extracting the real AI response
+const aiResponse = data.candidates[0].content.parts[0].text;                
                 status.innerText = "Analysis Complete!";
                 preview.innerHTML = `<div style="text-align: left; padding: 10px;">${aiResponse}</div>`;
             } catch (error) {
@@ -143,4 +142,5 @@ const response = await fetch('https://sample-ai-website-for-prompt-to-pro.vercel
 </script>
 </body>
 </html>
+
 
