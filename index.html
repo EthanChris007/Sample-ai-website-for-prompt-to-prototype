@@ -131,7 +131,7 @@ async function predictCareer() {
         const data = await response.json();
         
         // This specific path is required to read the text from Gemini 1.5 Flash
-const aiMessage = data.text || "AI response format was unexpected. Please try again.";        
+const aiMessage = data.text || "AI response was empty.";      
         preview.innerHTML = `<div style="text-align: left; padding: 20px; line-height: 1.6; color: #1e293b;">${aiMessage}</div>`;
         status.innerText = "Analysis Complete!";
     } catch (error) {
@@ -143,3 +143,4 @@ const aiMessage = data.text || "AI response format was unexpected. Please try ag
 </script>
 </body>
 </html>
+
