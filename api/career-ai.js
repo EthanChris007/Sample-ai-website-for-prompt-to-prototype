@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-    // FIXED: Corrected spelling to res.setHeader
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -9,11 +8,14 @@ export default async function handler(req, res) {
 
     const body = req.body && typeof req.body === 'object' ? req.body : JSON.parse(req.body || '{}');
     
-    // FIXED: Match the variable name (apiKey) exactly for line 14
+    // IMPORTANT: This must match the name in Vercel exactly
     const apiKey = process.env.GEMINI_API_KEY;
 
+    if (!apiKey) {
+        return res.status(200).json({ text: "Error: GEMINI_API_KEY is missing in Vercel settings." });
+    }
+
     try {
-        // FIXED: Using the most stable v1beta path for 1.5-flash
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -25,11 +27,10 @@ export default async function handler(req, res) {
         const data = await response.json();
         
         if (data.error) {
-            // This will now show the REAL error if the key is still wrong
             return res.status(200).json({ text: `Google API Error: ${data.error.message}` });
         }
 
-        const cleanText = data.candidates?.[0]?.content?.parts?.[0]?.text || "The AI is thinking... please try again.";
+        const cleanText = data.candidates?.[0]?.content?.parts?.[0]?.text || "AI response empty.";
         res.status(200).json({ text: cleanText });
     } catch (error) {
         res.status(500).json({ error: error.message });
