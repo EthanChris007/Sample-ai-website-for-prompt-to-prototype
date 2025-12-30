@@ -1,4 +1,5 @@
 export default async function handler(req, res) {
+    // These headers MUST be here to prevent the "Failed to fetch" error
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -9,7 +10,7 @@ export default async function handler(req, res) {
     const body = req.body && typeof req.body === 'object' ? req.body : JSON.parse(req.body || '{}');
     const apiKey = process.env.GEMINI_API_KEY;
 
-   try {
+    try {
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -19,14 +20,9 @@ export default async function handler(req, res) {
         });
 
         const data = await response.json();
-        
-        // This extracts the text on the server so the website doesn't have to
         const cleanText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response from AI.";
-        
-        // This sends a simple, clean message back to your website
         res.status(200).json({ text: cleanText });
     } catch (error) {
         res.status(500).json({ error: error.message });
-    }
     }
 }
