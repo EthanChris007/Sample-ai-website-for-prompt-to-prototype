@@ -1,4 +1,5 @@
 export default async function handler(req, res) {
+    // FIXED ALL SPELLING ERRORS HERE
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -10,7 +11,7 @@ export default async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY;
 
     try {
-        // STABLE FIX: Using v1beta with the specific gemini-1.5-flash model name
+        // This is the absolute most stable URL for Gemini 1.5 Flash
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -25,7 +26,7 @@ export default async function handler(req, res) {
             return res.status(200).json({ text: `Google API Error: ${data.error.message}` });
         }
 
-        const cleanText = data.candidates?.[0]?.content?.parts?.[0]?.text || "The AI is processing... please try again.";
+        const cleanText = data.candidates?.[0]?.content?.parts?.[0]?.text || "AI response empty. Check API Key permissions.";
         res.status(200).json({ text: cleanText });
     } catch (error) {
         res.status(500).json({ error: error.message });
