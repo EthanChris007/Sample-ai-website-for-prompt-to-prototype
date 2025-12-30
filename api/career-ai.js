@@ -10,8 +10,8 @@ export default async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY;
 
     try {
-        // ULTIMATE URL FIX: v1 stable with the 8b flash variant
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-8b:generateContent?key=${apiKey}`, {
+        // UNIVERSAL URL: This specific combination is the most stable for new API keys
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
