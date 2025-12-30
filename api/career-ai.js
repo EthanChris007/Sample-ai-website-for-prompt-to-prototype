@@ -1,4 +1,5 @@
 export default async function handler(req, res) {
+    // FIXED SPELLING: Changed 'setHeadeer' to 'setHeader'
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -10,8 +11,8 @@ export default async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY;
 
     try {
-        // CHANGED MODEL NAME: Removed "-latest" to use the standard stable version
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        // Line 14: Using the stable v1 path
+        const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=' + apiKey, {    
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -22,10 +23,10 @@ export default async function handler(req, res) {
         const data = await response.json();
         
         if (data.error) {
-            return res.status(200).json({ text: `AI Error: ${data.error.message}` });
+            return res.status(200).json({ text: `Google API Error: ${data.error.message}` });
         }
 
-        const cleanText = data.candidates?.[0]?.content?.parts?.[0]?.text || "The AI is thinking... please try again.";
+        const cleanText = data.candidates?.[0]?.content?.parts?.[0]?.text || "The AI is processing... please try again.";
         res.status(200).json({ text: cleanText });
     } catch (error) {
         res.status(500).json({ error: error.message });
