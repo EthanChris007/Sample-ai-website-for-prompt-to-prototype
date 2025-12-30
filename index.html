@@ -108,39 +108,43 @@
         </div>
     </div>
 
-   <script>
-        async function predictCareer() {
-            const input = document.getElementById('userInput').value.trim();
-            const status = document.getElementById('status');
-            const preview = document.getElementById('preview');
+ <script>
+    async function predictCareer() {
+        const input = document.getElementById('userInput').value.trim();
+        const status = document.getElementById('status');
+        const preview = document.getElementById('preview');
 
-            if (!input) return alert("Please enter your skills and interests!");
+        if (!input) return alert("Please enter your skills and interests!");
 
-            status.innerText = "Consulting the Career Architect AI...";
-            preview.innerHTML = "<p style='color: #64748b; font-style: italic;'>Analyzing career trends and skill-matching...</p>";
+        status.innerText = "Consulting the Career Architect AI...";
+        preview.innerHTML = "<p style='color: #64748b; font-style: italic;'>Analyzing career trends and skill-matching...</p>";
 
-            try {
-                // This talks to your Vercel backend
-const response = await fetch('https://sample-ai-website-for-prompt-to-pro.vercel.app/api/career-ai', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userInput: input })
-});
+        try {
+            const response = await fetch('https://sample-ai-website-for-prompt-to-pro.vercel.app/api/career-ai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userInput: input })
+            });
 
-const data = await response.json();
+            // Check if the server actually sent a successful response
+            if (!response.ok) throw new Error('Server returned an error');
 
-// Extracting the real AI response
-const aiResponse = data.candidates[0].content.parts[0].text;                
-                status.innerText = "Analysis Complete!";
-                preview.innerHTML = `<div style="text-align: left; padding: 10px;">${aiResponse}</div>`;
-            } catch (error) {
-                console.error(error);
-                status.innerText = "Connection Error.";
-                preview.innerHTML = "<p style='color: red;'>AI could not be reached. Check your Vercel URL.</p>";
-            }
+            const data = await response.json();
+
+            // Extract text with a fallback in case the AI response is empty
+            const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "AI response was empty. Please try again.";
+
+            status.innerText = "Analysis Complete!";
+            preview.innerHTML = `<div style="text-align: left; padding: 20px; line-height: 1.6;">${aiResponse}</div>`;
+        } catch (error) {
+            console.error("Full Error Details:", error);
+            status.innerText = "Connection Error.";
+            preview.innerHTML = `<p style='color: red; padding: 20px;'>Error: ${error.message}. <br><br>Make sure your Vercel deployment is 'Ready' and the API key is active.</p>`;
         }
+    }
 </script>
 </body>
 </html>
+
 
 
