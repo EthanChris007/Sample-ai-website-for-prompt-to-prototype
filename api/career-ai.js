@@ -8,11 +8,11 @@ export default async function handler(req, res) {
 
     const body = req.body && typeof req.body === 'object' ? req.body : JSON.parse(req.body || '{}');
     
-    // IMPORTANT: This must match the name in Vercel exactly
+    // THE DIAGNOSTIC CHECK
     const apiKey = process.env.GEMINI_API_KEY;
 
-    if (!apiKey) {
-        return res.status(200).json({ text: "Error: GEMINI_API_KEY is missing in Vercel settings." });
+    if (!apiKey || apiKey === "") {
+        return res.status(200).json({ text: "DIAGNOSTIC ERROR: Your GEMINI_API_KEY is missing or not named correctly in Vercel settings." });
     }
 
     try {
@@ -30,7 +30,7 @@ export default async function handler(req, res) {
             return res.status(200).json({ text: `Google API Error: ${data.error.message}` });
         }
 
-        const cleanText = data.candidates?.[0]?.content?.parts?.[0]?.text || "AI response empty.";
+        const cleanText = data.candidates?.[0]?.content?.parts?.[0]?.text || "The AI is thinking... please try again.";
         res.status(200).json({ text: cleanText });
     } catch (error) {
         res.status(500).json({ error: error.message });
