@@ -15,10 +15,13 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { message, conversationHistory } = req.body;
+    const { message, userInput, conversationHistory } = req.body;
+    
+    // Accept either 'message' or 'userInput'
+    const userMessage = message || userInput;
 
-    if (!message) {
-      return res.status(400).json({ error: 'Message is required' });
+    if (!userMessage) {
+      return res.status(400).json({ error: 'Message or userInput is required' });
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
@@ -43,7 +46,7 @@ export default async function handler(req, res) {
     // Add current user message
     contents.push({
       role: 'user',
-      parts: [{ text: message }]
+      parts: [{ text: userMessage }]
     });
 
     // Call Gemini 1.5 Flash API (generous free tier!)
@@ -102,6 +105,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ 
       response: aiResponse,
+      text: aiResponse, // Also send as 'text' for your frontend
       model: "gemini-1.5-flash"
     });
 
