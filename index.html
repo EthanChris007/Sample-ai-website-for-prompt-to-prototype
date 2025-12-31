@@ -1,146 +1,120 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Career Pathfinder</title>
-    <style>
-        /* Professional Career Counselor Theme */
-        :root {
-            --bg: #f8fafc;
-            --card: #ffffff;
-            --text: #1e293b;
-            --accent: #2563eb;
-            --border: #e2e8f0;
-        }
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-        }
-        .header { text-align: center; margin-bottom: 30px; }
-        .header h1 { color: var(--accent); font-size: 2.5rem; }
-        .container {
-            max-width: 1100px;
-            width: 100%;
-            display: grid;
-            grid-template-columns: 1fr 1.5fr;
-            gap: 25px;
-        }
-        .panel {
-            background: var(--card);
-            padding: 30px;
-            border-radius: 16px;
-            border: 1px solid var(--border);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-        textarea {
-            width: 100%;
-            height: 200px;
-            background: #fff;
-            color: #1e293b;
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            padding: 15px;
-            font-size: 1rem;
-            resize: none;
-            margin-bottom: 15px;
-            box-sizing: border-box;
-            outline: none;
-        }
-        textarea:focus { border-color: var(--accent); }
-        button {
-            width: 100%;
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 16px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-weight: 700;
-            font-size: 1.1rem;
-            transition: background 0.2s;
-        }
-        button:hover { background: #1d4ed8; }
-        #preview {
-            background: #fff;
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            min-height: 400px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        .status-msg { font-size: 0.9rem; color: #64748b; margin-top: 15px; font-weight: 500; }
-        h3 { color: var(--accent); margin-top: 0; }
-    </style>
-</head>
-<body>
+export default async function handler(req, res) {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  // Handle OPTIONS request for CORS
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  // Only allow POST requests
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
-    <div class="header">
-        <h1>🚀 AI Career Pathfinder</h1>
-        <p>Expert career counseling driven by the Golden Prompt logic.</p>
-    </div>
+  try {
+    const { message, userInput, conversationHistory } = req.body;
+    
+    // Accept either 'message' or 'userInput'
+    const userMessage = message || userInput;
 
-    <div class="container">
-        <div class="panel">
-            <h3>Profile Analysis</h3>
-            <p style="font-size: 0.9rem; color: #64748b;">Describe your skills, hobbies, and what you enjoy doing.</p>
-            <textarea id="userInput" placeholder="e.g., 'I love math and solving puzzles' or 'I am very creative and like to draw'"></textarea>
-            <button onclick="predictCareer()">Predict My Future</button>
-            <div id="status" class="status-msg">Ready to analyze your profile...</div>
-        </div>
-
-        <div class="panel">
-            <h3>Your Career Blueprint</h3>
-            <div id="preview">
-                <p id="placeholderText" style="color: #94a3b8; text-align: center; padding: 20px;">
-                    Enter your details and click "Predict My Future" to generate your roadmap.
-                </p>
-            </div>
-        </div>
-    </div>
-
-<script>
-async function predictCareer() {
-    const input = document.getElementById('userInput').value.trim();
-    const status = document.getElementById('status');
-    const preview = document.getElementById('preview');
-
-    if (!input) return alert("Please enter your skills and interests!");
-
-    status.innerText = "Consulting the Career Architect AI...";
-    preview.innerHTML = "<p style='color: #64748b; font-style: italic;'>Analyzing career trends and skill-matching...</p>";
-
-    try {
-        const response = await fetch('https://sample-ai-website-for-prompt-to-pro.vercel.app/api/career-ai', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userInput: input })
-        });
-
-        if (!response.ok) throw new Error('Server returned an error');
-
-        const data = await response.json();
-        
-        // This specific path is required to read the text from Gemini 1.5 Flash
-const aiMessage = data.text || "AI response was empty.";      
-        preview.innerHTML = `<div style="text-align: left; padding: 20px; line-height: 1.6; color: #1e293b;">${aiMessage}</div>`;
-        status.innerText = "Analysis Complete!";
-    } catch (error) {
-        console.error("Fetch Error:", error);
-        preview.innerHTML = `<p style="color: #ef4444; padding: 20px;">Error: ${error.message}</p>`;
-        status.innerText = "Connection Error.";
+    if (!userMessage) {
+      return res.status(400).json({ error: 'Message or userInput is required' });
     }
-}
-</script>
-</body>
-</html>
 
+    const apiKey = process.env.GEMINI_API_KEY;
+    
+    if (!apiKey) {
+      return res.status(500).json({ error: 'API key not configured' });
+    }
+
+    // Build contents array with conversation history
+    const contents = [];
+    
+    // Add conversation history if exists
+    if (conversationHistory && conversationHistory.length > 0) {
+      conversationHistory.forEach(msg => {
+        contents.push({
+          role: msg.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: msg.content }]
+        });
+      });
+    }
+    
+    // Add current user message
+    contents.push({
+      role: 'user',
+      parts: [{ text: userMessage }]
+    });
+
+    // Call Gemini 1.5 Flash API (generous free tier!)
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: contents,
+          systemInstruction: {
+            parts: [{
+              text: "You are a helpful career advisor. Provide practical, actionable career advice. Be encouraging but realistic. Help users with resume tips, interview preparation, career transitions, and professional development."
+            }]
+          },
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 1024,
+          }
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    // Check for API errors
+    if (!response.ok) {
+      console.error('Gemini API Error:', data);
+      
+      if (response.status === 429) {
+        return res.status(429).json({ 
+          error: 'Rate limit exceeded. Please wait a moment and try again.',
+          details: data.error?.message 
+        });
+      }
+      
+      return res.status(response.status).json({ 
+        error: data.error?.message || 'API request failed',
+        details: data
+      });
+    }
+
+    // Extract the response text
+    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!aiResponse) {
+      return res.status(500).json({ 
+        error: 'No response from AI',
+        details: data 
+      });
+    }
+
+    return res.status(200).json({ 
+      response: aiResponse,
+      text: aiResponse, // Also send as 'text' for your frontend
+      model: "gemini-1.5-flash"
+    });
+
+  } catch (error) {
+    console.error('Server Error:', error);
+    
+    return res.status(500).json({ 
+      error: 'Failed to get AI response',
+      details: error.message 
+    });
+  }
+}
