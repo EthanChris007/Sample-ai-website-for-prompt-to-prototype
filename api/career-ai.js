@@ -3,12 +3,12 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  
+
   // Handle OPTIONS request for CORS
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
-  
+
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -19,7 +19,6 @@ export default async function handler(req, res) {
     
     // Accept either 'message' or 'userInput'
     const userMessage = message || userInput;
-
     if (!userMessage) {
       return res.status(400).json({ error: 'Message or userInput is required' });
     }
@@ -33,6 +32,17 @@ export default async function handler(req, res) {
     // Build contents array with conversation history
     const contents = [];
     
+    // Add system instruction as first message (instead of systemInstruction field)
+    contents.push({
+      role: 'user',
+      parts: [{ text: "You are a helpful career advisor. Provide practical, actionable career advice. Be encouraging but realistic. Help users with resume tips, interview preparation, career transitions, and professional development." }]
+    });
+    
+    contents.push({
+      role: 'model',
+      parts: [{ text: "I understand. I'm here to help with career guidance and advice." }]
+    });
+
     // Add conversation history if exists
     if (conversationHistory && conversationHistory.length > 0) {
       conversationHistory.forEach(msg => {
@@ -42,7 +52,7 @@ export default async function handler(req, res) {
         });
       });
     }
-    
+
     // Add current user message
     contents.push({
       role: 'user',
@@ -59,11 +69,6 @@ export default async function handler(req, res) {
         },
         body: JSON.stringify({
           contents: contents,
-          systemInstruction: {
-            parts: [{
-              text: "You are a helpful career advisor. Provide practical, actionable career advice. Be encouraging but realistic. Help users with resume tips, interview preparation, career transitions, and professional development."
-            }]
-          },
           generationConfig: {
             temperature: 0.7,
             topK: 40,
@@ -105,7 +110,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ 
       response: aiResponse,
-      text: aiResponse, // Also send as 'text' for your frontend
+      text: aiResponse,
       model: "gemini-1.5-flash"
     });
 
