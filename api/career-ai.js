@@ -1,124 +1,47 @@
 export default async function handler(req, res) {
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    // 1. Better CORS headers (allows your website to talk to your API)
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // Handle OPTIONS request for CORS
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+    if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // Only allow POST requests
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+    try {
+        const body = req.body && typeof req.body === 'object' ? req.body : JSON.parse(req.body || '{}');
+        const userMessage = body.message || body.userInput;
+        const apiKey = process.env.GEMINI_API_KEY;
 
-  try {
-    const { message, userInput, conversationHistory } = req.body;
-    
-    // Accept either 'message' or 'userInput'
-    const userMessage = message || userInput;
-    if (!userMessage) {
-      return res.status(400).json({ error: 'Message or userInput is required' });
-    }
+        if (!apiKey) return res.status(200).json({ text: "Error: API key not set in Vercel." });
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    
-    if (!apiKey) {
-      return res.status(500).json({ error: 'API key not configured' });
-    }
+        // 2. FIXED ENDPOINT: Switching from 'gemini-pro' (buggy) to 'gemini-1.5-flash' (stable)
+        const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ 
+                        parts: [{ text: `Act as a Career Advisor. For the user input: "${userMessage}", provide a 3-sentence career prediction and a 6-month roadmap.` }] 
+                    }]
+                })
+            }
+        );
 
-    // Build contents array with conversation history
-    const contents = [];
-    
-    // Add system instruction as first message (instead of systemInstruction field)
-    contents.push({
-      role: 'user',
-      parts: [{ text: "You are a helpful career advisor. Provide practical, actionable career advice. Be encouraging but realistic. Help users with resume tips, interview preparation, career transitions, and professional development." }]
-    });
-    
-    contents.push({
-      role: 'model',
-      parts: [{ text: "I understand. I'm here to help with career guidance and advice." }]
-    });
+        const data = await response.json();
 
-    // Add conversation history if exists
-    if (conversationHistory && conversationHistory.length > 0) {
-      conversationHistory.forEach(msg => {
-        contents.push({
-          role: msg.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: msg.content }]
+        if (data.error) {
+            return res.status(200).json({ text: `Google Error: ${data.error.message}` });
+        }
+
+        const cleanText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No AI response found.";
+        
+        // 3. Send back both 'text' and 'response' so both versions of your code work
+        res.status(200).json({ 
+            text: cleanText,
+            response: cleanText
         });
-      });
+
+    } catch (error) {
+        res.status(200).json({ text: "Server Connection Error: " + error.message });
     }
-
-    // Add current user message
-    contents.push({
-      role: 'user',
-      parts: [{ text: userMessage }]
-    });
-
-    // Call Gemini 1.5 Flash API (generous free tier!)
-    const response = await fetch(
-`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: contents,
-          generationConfig: {
-            temperature: 0.7,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 1024,
-          }
-        })
-      }
-    );
-
-    const data = await response.json();
-
-    // Check for API errors
-    if (!response.ok) {
-      console.error('Gemini API Error:', data);
-      
-      if (response.status === 429) {
-        return res.status(429).json({ 
-          error: 'Rate limit exceeded. Please wait a moment and try again.',
-          details: data.error?.message 
-        });
-      }
-      
-      return res.status(response.status).json({ 
-        error: data.error?.message || 'API request failed',
-        details: data
-      });
-    }
-
-    // Extract the response text
-    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!aiResponse) {
-      return res.status(500).json({ 
-        error: 'No response from AI',
-        details: data 
-      });
-    }
-
-    return res.status(200).json({ 
-      response: aiResponse,
-      text: aiResponse,
-      model: "gemini-1.5-flash"
-    });
-
-  } catch (error) {
-    console.error('Server Error:', error);
-    
-    return res.status(500).json({ 
-      error: 'Failed to get AI response',
-      details: error.message 
-    });
-  }
 }
